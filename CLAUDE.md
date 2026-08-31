@@ -85,7 +85,7 @@ project1/
 
 项目配置了完整质量体系（.claude/ 下）：
 
-- **提交门禁**：`git commit` 自动触发（PreToolUse hook），先跑后端 pytest + 前端构建，全过才放行
+- **提交门禁**：`git commit` 自动触发（PreToolUse hook），先跑后端 pytest + 前端 vitest + 前端构建，全过才放行
 - **质量工程师 agent**（quality-engineer）：五维度代码质量审查（安全/注释/错误处理/规范/性能）
 - **测试专员 agent**（tester1）：编写/运行 pytest 测试
 - **/git-save**：带双重门禁的保存流程（tester1 + quality-engineer 全过才提交）

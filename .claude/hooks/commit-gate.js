@@ -2,7 +2,7 @@
 /**
  * commit-gate.js — git commit 提交门禁（Claude Code PreToolUse hook）
  *
- * 作用：拦截 git commit 命令，提交前自动跑「后端 pytest 测试 + 前端构建」。
+ * 作用：拦截 git commit 命令，提交前自动跑「后端 pytest + 前端 vitest 测试 + 前端构建」。
  *       全过 → 放行；有失败 → 拦截并输出中文友好提示。
  *
  * 退出码约定：
@@ -110,6 +110,15 @@ function main() {
           `"${PYTHON}" -m pytest tests/ -q`,
           180_000, // 测试含真实百炼 API 调用，放宽超时
           path.join(PROJECT_ROOT, 'backend')
+        )
+    },
+    {
+      label: '前端测试（vitest）',
+      run: () =>
+        runCheck(
+          `${NPM} run test`,
+          180_000, // jsdom 环境初始化较慢，实测约 1 分钟
+          path.join(PROJECT_ROOT, 'frontend')
         )
     },
     {
