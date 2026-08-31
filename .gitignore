@@ -23,6 +23,9 @@ dist/
 .vscode/
 *.swp
 
+# ===== Claude Code 门禁报告（运行时产物）=====
+.claude/gate/
+
 # ===== 系统文件 =====
 Thumbs.db
 Desktop.ini

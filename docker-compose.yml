@@ -36,6 +36,9 @@ services:
     image: redis:7-alpine
     container_name: project1-redis
     restart: always
+    ports:
+      # 映射到宿主机 6379：本机开发调试（pytest 等）直连使用
+      - "6379:6379"
     volumes:
       - ./data/redis:/data
     command: redis-server --appendonly yes
