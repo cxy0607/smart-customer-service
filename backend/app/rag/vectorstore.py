@@ -8,6 +8,9 @@
 - 每个知识库一个 collection（kb_{id}）：实现知识库之间的向量隔离，
   删除整个知识库时直接删 collection，不会残留数据
 - persist_directory 持久化到项目 data/chroma 目录（D 盘），容器部署时挂载卷即可保留数据
+- 相似度统一约定：本模块对外返回的 score 均为「余弦相似度」（越接近 1 越相似），
+  距离->相似度的转换在包装层完成，不依赖 LangChain 库的 relevance_score_fn
+  （实测该参数在部分版本下不生效，直接转换更可控）
 """
 from langchain_chroma import Chroma
 
@@ -24,27 +27,36 @@ def collection_name(kb_id: int) -> str:
     return f"kb_{kb_id}"
 
 
-def _get_store(kb_id: int) -> Chroma:
-    """获取指定知识库的向量存储实例（每次按 collection 定位）"""
+def _new_store(collection: str) -> Chroma:
+    """创建指向指定 collection 的向量存储实例"""
     return Chroma(
-        collection_name=collection_name(kb_id),
+        collection_name=collection,
         embedding_function=get_embedding_model(),
         persist_directory=str(settings.resolve_path(settings.CHROMA_DIR)),
-        # 把余弦距离转换为相似度：返回值越接近 1 表示越相似，语义直观
-        relevance_score_fn=lambda distance: 1.0 - distance,
     )
 
+
+def _get_store(kb_id: int) -> Chroma:
+    """获取指定知识库的向量存储实例"""
+    return _new_store(collection_name(kb_id))
+
+
+def _to_similarity(score: float) -> float:
+    """距离转相似度：Chroma 返回余弦距离（0 最相似），转成相似度（1 最相似）"""
+    return 1.0 - score
+
+
+# ===== 知识库文档向量 =====
 
 def add_documents(kb_id: int, docs: list) -> int:
     """把切分后的片段写入指定知识库，返回写入的片段数"""
     store = _get_store(kb_id)
-    # Chroma 内部自动按 id 去重；为支持"同一文档重传"，用 source+内容 生成稳定 id
     store.add_documents(docs)
     return len(docs)
 
 
 def delete_documents(kb_id: int, source: str) -> None:
-    """删除指定知识库中来源于某文件的所有片段"""
+    """删除指定知识库中来源于某文件的所有片段（按 metadata.source 匹配）"""
     store = _get_store(kb_id)
     results = store.get(where={"source": source})
     if results and results["ids"]:
@@ -60,9 +72,10 @@ def delete_collection(kb_id: int) -> None:
 
 
 def search_with_score(kb_id: int, query: str, k: int = 4) -> list:
-    """相似度检索：返回 [(Document, score)]，score 越接近 1 越相似（余弦相似度）"""
+    """相似度检索：返回 [(Document, similarity)]，similarity 越接近 1 越相似"""
     store = _get_store(kb_id)
-    return store.similarity_search_with_score(query, k=k)
+    results = store.similarity_search_with_score(query, k=k)
+    return [(doc, _to_similarity(score)) for doc, score in results]
 
 
 # ===== FAQ 向量匹配（FAQ 优先策略的检索层） =====
@@ -72,25 +85,19 @@ def faq_collection_name(kb_id: int) -> str:
     return f"kb_{kb_id}_faq"
 
 
+def _get_faq_store(kb_id: int) -> Chroma:
+    return _new_store(faq_collection_name(kb_id))
+
+
 def upsert_faq_vector(kb_id: int, faq_id: int, question: str) -> None:
     """新增/更新 FAQ 时同步其问题向量（id 固定为 faq_{id}，天然支持覆盖更新）"""
-    store = Chroma(
-        collection_name=faq_collection_name(kb_id),
-        embedding_function=get_embedding_model(),
-        persist_directory=str(settings.resolve_path(settings.CHROMA_DIR)),
-        relevance_score_fn=lambda distance: 1.0 - distance,
-    )
+    store = _get_faq_store(kb_id)
     store.add_texts(texts=[question], ids=[f"faq_{faq_id}"], metadatas=[{"faq_id": faq_id}])
 
 
 def delete_faq_vector(kb_id: int, faq_id: int) -> None:
     """删除 FAQ 时同步删除其向量"""
-    store = Chroma(
-        collection_name=faq_collection_name(kb_id),
-        embedding_function=get_embedding_model(),
-        persist_directory=str(settings.resolve_path(settings.CHROMA_DIR)),
-        relevance_score_fn=lambda distance: 1.0 - distance,
-    )
+    store = _get_faq_store(kb_id)
     store.delete(ids=[f"faq_{faq_id}"])
 
 
@@ -99,16 +106,20 @@ def match_faq(kb_id: int, query: str, threshold: float) -> tuple[int, float] | N
 
     返回 (faq_id, similarity)；低于阈值返回 None（视为未命中，交给 RAG 处理）
     """
-    store = Chroma(
-        collection_name=faq_collection_name(kb_id),
-        embedding_function=get_embedding_model(),
-        persist_directory=str(settings.resolve_path(settings.CHROMA_DIR)),
-        relevance_score_fn=lambda distance: 1.0 - distance,
-    )
+    store = _get_faq_store(kb_id)
     results = store.similarity_search_with_score(query, k=1)
     if not results:
         return None
-    doc, similarity = results[0]
+    doc, distance = results[0]
+    similarity = _to_similarity(distance)
     if similarity < threshold:
         return None
     return doc.metadata["faq_id"], similarity
+
+
+def delete_faq_collection(kb_id: int) -> None:
+    """删除知识库的 FAQ 向量 collection（删除知识库时调用，collection 不存在则忽略）"""
+    try:
+        _get_faq_store(kb_id).delete_collection()
+    except Exception:
+        pass  # 未创建过 FAQ 的知识库没有该 collection

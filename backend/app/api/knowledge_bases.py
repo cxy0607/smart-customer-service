@@ -16,7 +16,7 @@ from app.core.response import ok
 from app.db.session import get_db
 from app.models.kb import Document, Faq, KnowledgeBase
 from app.models.user import User
-from app.rag.vectorstore import delete_collection, faq_collection_name
+from app.rag.vectorstore import delete_collection, delete_faq_collection
 from app.schemas.kb import KnowledgeBaseCreate, KnowledgeBaseOut, KnowledgeBaseUpdate
 
 router = APIRouter(prefix="/knowledge-bases", tags=["知识库"])
@@ -104,18 +104,7 @@ def delete_knowledge_base(
         delete_collection(kb_id)
     except Exception as e:
         logger.warning(f"知识库向量清理异常 | kb={kb_id} error={e}")
-    try:
-        from app.rag.vectorstore import Chroma
-        from app.llm.factory import get_embedding_model
-
-        faq_store = Chroma(
-            collection_name=faq_collection_name(kb_id),
-            embedding_function=get_embedding_model(),
-            persist_directory=str(get_settings().resolve_path(get_settings().CHROMA_DIR)),
-        )
-        faq_store.delete_collection()
-    except Exception:
-        pass  # 未创建过 FAQ 的知识库没有该 collection，忽略
+    delete_faq_collection(kb_id)
 
     # 2. 清理上传文件目录
     upload_kb_dir = get_settings().resolve_path(get_settings().UPLOAD_DIR) / str(kb_id)
