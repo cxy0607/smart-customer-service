@@ -20,7 +20,7 @@
 | 数据库 | MySQL 8 + SQLAlchemy 2.x + Alembic | 业务数据存储 + 迁移版本管理 |
 | 缓存 | Redis 7 | 滑动窗口限流 |
 | 前端 | Vue3 + Vite + Element Plus + Pinia | 管理后台，SSE 流式对话 |
-| 测试 | pytest + httpx TestClient | 16 个用例覆盖核心流程 |
+| 测试 | pytest + vitest | 后端 16 用例 + 前端 26 用例 |
 | 部署 | Docker Compose | mysql/redis/backend/frontend 四服务编排 |
 
 ---
@@ -78,6 +78,7 @@ project1/
 | `.venv/Scripts/alembic revision --autogenerate -m "说明"` | 生成数据库迁移 | backend/ |
 | `npm run dev` | 启动前端开发服务器（5173，代理 /api 到 8000） | frontend/ |
 | `npm run build` | 构建前端生产包 | frontend/ |
+| `npm test` | 运行前端测试（vitest） | frontend/ |
 | `docker compose up -d --build` | 一键部署（含前端构建） | 项目根 |
 
 ## 质量体系
