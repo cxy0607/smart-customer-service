@@ -6,7 +6,7 @@
     - 后台任务处理完成后更新状态；失败记录 error_msg，管理后台可点击"重试"
     - 状态机保证任何时刻可观测、可恢复，不会出现"卡在中间"的僵尸状态
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -22,7 +22,7 @@ class KnowledgeBase(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), unique=True)
     description: Mapped[str] = mapped_column(String(500), default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))  # 统一 UTC 存储，序列化时由 schemas/base.py 补时区
 
 
 class Document(Base):
@@ -52,7 +52,7 @@ class Document(Base):
     chunk_count: Mapped[int] = mapped_column(Integer, default=0)
     # 失败原因（failed 状态时展示给管理员）
     error_msg: Mapped[str] = mapped_column(String(500), default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))  # 统一 UTC 存储，序列化时由 schemas/base.py 补时区
 
 
 class Faq(Base):
@@ -66,4 +66,4 @@ class Faq(Base):
     )
     question: Mapped[str] = mapped_column(String(500))
     answer: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))  # 统一 UTC 存储，序列化时由 schemas/base.py 补时区

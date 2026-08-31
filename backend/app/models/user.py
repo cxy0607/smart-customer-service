@@ -1,5 +1,5 @@
 """用户模型"""
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -17,4 +17,4 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     # 角色：admin（管理员，可管理知识库/FAQ/查看记录）/ user（访客，仅可提问）
     role: Mapped[str] = mapped_column(String(20), default="user")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))  # 统一 UTC 存储，序列化时由 schemas/base.py 补时区

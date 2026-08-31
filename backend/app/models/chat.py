@@ -1,5 +1,5 @@
 """对话相关模型：会话与消息"""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
@@ -22,7 +22,7 @@ class Conversation(Base):
     )
     # 会话标题：默认取用户第一个问题（截断）
     title: Mapped[str] = mapped_column(String(200), default="新对话")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))  # 统一 UTC 存储，序列化时由 schemas/base.py 补时区
 
 
 class Message(Base):
@@ -40,4 +40,4 @@ class Message(Base):
     # 引用来源（assistant 消息）：[{source, page, content, score}] 的 JSON
     # 用于前端「来源引用」展示与审计追溯
     source_docs: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))  # 统一 UTC 存储，序列化时由 schemas/base.py 补时区

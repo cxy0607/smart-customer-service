@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.schemas.base import UTCDateTimeModel
+
 
 # ===== 知识库 =====
 class KnowledgeBaseCreate(BaseModel):
@@ -15,7 +17,7 @@ class KnowledgeBaseUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=500)
 
 
-class KnowledgeBaseOut(BaseModel):
+class KnowledgeBaseOut(UTCDateTimeModel):
     id: int
     name: str
     description: str
@@ -28,7 +30,7 @@ class KnowledgeBaseOut(BaseModel):
 
 
 # ===== 文档 =====
-class DocumentOut(BaseModel):
+class DocumentOut(UTCDateTimeModel):
     id: int
     kb_id: int
     filename: str
@@ -52,7 +54,7 @@ class FaqUpdate(BaseModel):
     answer: str | None = Field(default=None, min_length=1)
 
 
-class FaqOut(BaseModel):
+class FaqOut(UTCDateTimeModel):
     id: int
     kb_id: int
     question: str

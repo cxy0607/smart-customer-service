@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas.base import UTCDateTimeModel
+
 
 class ChatRequest(BaseModel):
     """对话请求：指定知识库提问，可携带会话 id 实现多轮"""
@@ -13,7 +15,7 @@ class ChatRequest(BaseModel):
     conversation_id: int | None = Field(default=None, description="会话 id（多轮对话时携带）")
 
 
-class ConversationOut(BaseModel):
+class ConversationOut(UTCDateTimeModel):
     id: int
     kb_id: int
     kb_name: str = ""
@@ -23,7 +25,7 @@ class ConversationOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class MessageOut(BaseModel):
+class MessageOut(UTCDateTimeModel):
     id: int
     role: str
     content: str
