@@ -1,0 +1,10 @@
+# 构建上下文排除：只发送 Dockerfile 需要的文件
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+data/
+logs/
+.env

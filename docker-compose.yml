@@ -1,18 +1,90 @@
 # =============================================
-# 智能客服问答系统 - 服务编排
-# 开发阶段：只启动 redis（MySQL 使用本机已安装的实例）
-# 部署阶段：所有服务一键启动（阶段 6 完善为完整版）
+# 智能客服问答系统 - Docker Compose 一键部署
+# 启动：docker compose up -d --build
+# 访问：http://localhost （默认管理员 admin/admin123，见 .env）
 # =============================================
 
 services:
-  # Redis：限流计数、多轮对话上下文缓存
+  # ---------- MySQL：业务数据 ----------
+  mysql:
+    image: mysql:8.0
+    container_name: smart-cs-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-smart_cs}
+      # 时区与字符集
+      TZ: Asia/Shanghai
+      LANG: C.UTF-8
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      # 数据持久化到项目目录（D 盘），不用 Docker 默认卷
+      - ./data/mysql:/var/lib/mysql
+    ports:
+      # 映射到宿主机 3307（本机 3306 已被本地 MySQL 占用），方便 Navicat 等工具连接
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------- Redis：限流计数 ----------
   redis:
     image: redis:7-alpine
     container_name: project1-redis
     restart: always
-    ports:
-      - "6379:6379"
     volumes:
-      # 数据持久化到项目目录（D 盘），不使用 Docker 默认卷，避免占用 C 盘
       - ./data/redis:/data
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ---------- 后端：FastAPI ----------
+  backend:
+    build: ./backend
+    container_name: smart-cs-backend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      # 容器内连接 compose 网络中的服务（覆盖 .env 中面向本机开发的地址）
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      # 数据目录：容器内绝对路径，与挂载卷对应（覆盖 .env 的相对路径配置）
+      UPLOAD_DIR: /app/data/uploads
+      CHROMA_DIR: /app/data/chroma
+    volumes:
+      # 上传文件与向量库持久化到项目目录
+      - ./data/uploads:/app/data/uploads
+      - ./data/chroma:/app/data/chroma
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  # ---------- 前端：nginx 托管静态文件 + API 反向代理 ----------
+  frontend:
+    build: ./frontend
+    container_name: smart-cs-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      # 等后端健康后再启动 nginx（nginx 动态解析 upstream，此处为保险双保险）
+      backend:
+        condition: service_healthy
