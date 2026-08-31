@@ -1,0 +1,18 @@
+# =============================================
+# 智能客服问答系统 - 服务编排
+# 开发阶段：只启动 redis（MySQL 使用本机已安装的实例）
+# 部署阶段：所有服务一键启动（阶段 6 完善为完整版）
+# =============================================
+
+services:
+  # Redis：限流计数、多轮对话上下文缓存
+  redis:
+    image: redis:7-alpine
+    container_name: project1-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      # 数据持久化到项目目录（D 盘），不使用 Docker 默认卷，避免占用 C 盘
+      - ./data/redis:/data
+    command: redis-server --appendonly yes
