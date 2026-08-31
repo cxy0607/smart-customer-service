@@ -18,6 +18,9 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 # 移除默认 handler，按需重新配置
 logger.remove()
 
+# 为 request_id 提供默认值：非 HTTP 环境（脚本/后台任务）未绑定时显示 "-"
+logger.configure(extra={"request_id": "-"})
+
 # 控制台：开发时便于观察，带颜色
 logger.add(
     sys.stdout,
