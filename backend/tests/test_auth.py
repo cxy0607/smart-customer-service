@@ -139,6 +139,10 @@ def test_register_then_login_and_rbac(client):
 
 def test_register_rate_limit(client):
     """同一 IP 60 秒内注册超过 5 次应触发限流（第 6 次 429）"""
+    from app.db.redis_client import redis_available
+
+    if not redis_available():
+        pytest.skip("需要 Redis 才能验证限流（当前不可用，限流降级放行）")
     for _ in range(5):
         assert _register_user(client, "spam").status_code == 200
     resp = _register_user(client, "spam")

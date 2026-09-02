@@ -3,6 +3,7 @@
 注意：FAQ/文档向量化会真实调用百炼 API，测试耗时数秒属正常
 """
 import io
+import pytest
 import json
 import time
 import uuid
@@ -170,6 +171,10 @@ def test_conversation_list_and_delete(client, auth_headers):
 def test_rate_limit_sliding_window():
     """滑动窗口限流单元测试：limit=2 时第 3 次请求被拒绝"""
     from app.core.rate_limit import check_rate_limit
+    from app.db.redis_client import redis_available
+
+    if not redis_available():
+        pytest.skip("需要 Redis 才能验证限流（当前不可用，限流降级放行）")
 
     key = f"unit-test:{uuid.uuid4().hex}"
     assert check_rate_limit(key, limit=2) is True
