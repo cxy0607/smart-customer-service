@@ -1,6 +1,6 @@
 """FastAPI 依赖：认证与鉴权
 
-使用方式（面试可讲）：
+使用方式（设计说明）：
 - 路由函数声明 user: User = Depends(get_current_user)，框架自动完成 token 解析与用户加载
 - require_admin 基于 get_current_user 二次校验角色，实现 RBAC（角色访问控制）
 """

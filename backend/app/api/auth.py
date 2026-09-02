@@ -27,7 +27,7 @@ def register(req: RegisterRequest, request: Request, db: Session = Depends(get_d
         # 显式传 http_status=400：请求本身有错（名字被占），语义上不是成功响应
         raise BusinessError(ErrorCode.PARAM_ERROR, "该用户名已被注册", http_status=400)
 
-    # 角色在服务端硬编码为 user（不接受客户端传入角色，防止越权注册管理员——面试重点）
+    # 角色在服务端硬编码为 user（不接受客户端传入角色，防止越权注册管理员——安全关键）
     user = User(username=req.username, password_hash=hash_password(req.password), role="user")
     db.add(user)
     db.commit()

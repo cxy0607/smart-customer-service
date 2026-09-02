@@ -1,6 +1,6 @@
 """数据库模块：SQLAlchemy 2.x 连接管理
 
-设计要点（面试可讲）：
+设计要点（设计说明）：
 - pool_pre_ping=True：每次取连接前先 ping，自动剔除 MySQL 断开（如 8 小时无操作超时）的死连接
 - pool_recycle：连接定期回收，防止 MySQL 侧主动断开导致连接池里堆积失效连接
 - Base 继承 DeclarativeBase，所有 ORM 模型统一继承，Alembic 迁移基于同一元数据

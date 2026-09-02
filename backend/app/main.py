@@ -1,6 +1,6 @@
 """FastAPI 应用入口
 
-采用应用工厂模式（面试可讲）：
+采用应用工厂模式（设计说明）：
 - create_app() 返回应用实例，便于测试时创建隔离实例、未来扩展多环境配置
 - 中间件、异常处理器、路由注册集中在工厂函数中，一目了然
 """
@@ -22,7 +22,7 @@ settings = get_settings()
 def _init_database():
     """启动时初始化：建表（开发期便捷方案，正式环境用 Alembic 迁移）+ 默认管理员账号
 
-    说明（面试可讲）：生产环境的表结构变更应使用 Alembic 迁移脚本管理，
+    说明（设计说明）：生产环境的表结构变更应使用 Alembic 迁移脚本管理，
     此处 create_all 仅保证开发/首启即用；本项目阶段 6 已接入 Alembic 迁移。
     """
     from app.db.session import Base, SessionLocal, engine

@@ -1,6 +1,6 @@
 """大模型封装层：阿里云百炼（OpenAI 兼容接口）
 
-设计思路（面试可讲）：
+设计思路（设计说明）：
 1. 为什么用 OpenAI 兼容接口而不是百炼原生 SDK？
    - 百炼提供 /compatible-mode/v1 兼容端点，langchain-openai 的 ChatOpenAI 可直接指向它
    - 代码与厂商解耦：将来换 DeepSeek / Kimi / OpenAI，只需改 .env 里的 base_url 和模型名，业务代码零改动

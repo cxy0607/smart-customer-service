@@ -1,7 +1,7 @@
 /**
  * SSE 流式请求工具（基于 fetch + ReadableStream 手动解析）
  *
- * 为什么不用浏览器原生的 EventSource（面试可讲）：
+ * 为什么不用浏览器原生的 EventSource（设计说明）：
  * - EventSource 只支持 GET 请求，而对话接口需要 POST 提交问题
  * - EventSource 无法自定义请求头，不能携带 JWT Authorization
  * - fetch 流式读取响应体，手动按帧解析 event/data 字段，效果一致且更灵活

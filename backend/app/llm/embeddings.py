@@ -1,6 +1,6 @@
 """百炼向量化封装：自定义 LangChain Embeddings 实现
 
-为什么要自定义而不直接用 langchain-openai 的 OpenAIEmbeddings（面试可讲）：
+为什么要自定义而不直接用 langchain-openai 的 OpenAIEmbeddings（设计说明）：
 - langchain-openai 的 OpenAIEmbeddings 在批量处理时用 tiktoken 把文本编码成 token 数组发给 API，
   而百炼兼容接口的 /embeddings 只接受字符串输入（报错 InvalidParameter: contents is neither str nor list of str）
 - 自定义实现直接对接百炼规范：字符串列表 + 分批控制，行为完全可控

@@ -1,6 +1,6 @@
 """文档管理接口：上传（异步向量化）、列表、删除、重试
 
-流程（面试可讲）：
+流程（设计说明）：
 - 上传：保存文件 -> 落库(pending) -> 立即返回 -> BackgroundTasks 后台向量化
 - 前端轮询/刷新列表查看状态变化：pending -> processing -> succeeded/failed
 - 失败可重试：真实企业会由消息队列保证任务不丢失，本项目用 BackgroundTasks
